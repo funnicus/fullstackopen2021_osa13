@@ -1,0 +1,9 @@
+POST http://localhost:3001/api/blogs
+Content-Type: application/json
+
+{
+  "author": "JK",
+  "url": "juhanakuparinen.dev",
+  "title": "Test",
+  "likes": 0
+}

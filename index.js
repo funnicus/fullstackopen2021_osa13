@@ -1,5 +1,7 @@
 require('dotenv').config()
 const { Sequelize, Model, DataTypes, QueryTypes } = require('sequelize')
+const express = require('express')
+const app = express()
 
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialectOptions: {
@@ -10,7 +12,9 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
   },
 })
 
-/*class Blog extends Model {}
+app.use(express.json())
+
+class Blog extends Model {}
 
 Blog.init({
   id: {
@@ -33,19 +37,55 @@ Blog.init({
     type: DataTypes.INTEGER,
     default: 0
   }
-})*/
+}, {  
+  sequelize,  
+  underscored: true,  
+  timestamps: false,  
+  modelName: 'blog'
+})
 
-const main = async () => {
+// Create Blog table if it doen't exist!
+Blog.sync()
+
+app.get('/api/blogs', async (req, res) => { 
   try {
-    await sequelize.authenticate()
-    console.log('Connection has been established successfully.')
-    const blogs = await sequelize.query('SELECT * FROM blogs', { type: QueryTypes.SELECT })
-    //const blogs = await Blog.findAll()
-    console.log(blogs)
-    sequelize.close()
+    const blogs = await Blog.findAll(); 
+    res.json(blogs)
   } catch (error) {
-    console.error('Unable to connect to the database:', error)
-  }
-}
+    return res.status(400).json({ error })
+  } 
+})
 
-main()
+app.post('/api/blogs/', async (req, res) => {
+  try {
+    console.log(req.body)
+    const blog = Blog.create(req.body)
+    res.json(blog)
+  } catch (error) {
+    return res.status(400).json({ error })
+  }
+})
+
+app.delete('/api/blogs/:id', async (req, res) => {
+  try {
+    await Blog.destroy({ where: { id: req.params.id }})
+    res.status(204).end()
+  } catch (error) {
+    return res.status(400).json({ error })
+  }
+})
+
+app.get('/api/blogs/:id', async (req, res) => {
+  const blog = await Blog.findByPk(req.params.id)
+  if (blog) {
+    res.json(blog)
+  } else {
+    res.status(404).end()
+  }
+})
+
+const PORT = process.env.PORT || 3001
+
+app.listen(PORT, () => {  
+  console.log(`Server running on port ${PORT}`)
+})
